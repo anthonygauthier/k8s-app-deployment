@@ -2,10 +2,10 @@
   "name": "k8s-app-deployment",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/index.js",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "./node_modules/mocha/bin/mocha --exit tests/index.test.js"
+    "test": "mocha --exit tests/index.test.js"
   },
   "repository": {
     "type": "git",

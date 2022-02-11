@@ -17,6 +17,4 @@ app.listen(3000, (err) => {
     }
 });
 
-module.exports = {
-    app
-}
+module.exports = app
