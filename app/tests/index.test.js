@@ -6,7 +6,7 @@ describe('App endpoints test', () => {
         axios('http://localhost:3000/automation')
             .then(res => {
                 expect(res.statusCode).toBe(200)
-                done();
             })
+        done();
     });
 });
