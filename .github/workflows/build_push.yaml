@@ -3,19 +3,13 @@ on: [push]
 jobs:
   Build-Image:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: src
     steps:
-      - name: Build Container Image
-        run: docker build ./src"
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-  # Push-Image: 
-  #   runs-on: ubuntu-latest
-  #   defaults:
-  #     run:
-  #       shell: bash
-  #   steps:
-      # - run: docker build ./src"
+      - name: Build Container Image
+        run: docker build ./app
+      
+      - name: Push Image to ACR
+        run: echo "TODO..."
       
