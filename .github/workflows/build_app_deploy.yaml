@@ -22,6 +22,7 @@ jobs:
 
   # Job to deploy the app to K8S using Helm
   deploy-app:
+    needs: build-image-and-push
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:

@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - terraform/*
+      - .github/workflows/deploy_infra.yaml
 jobs:
   # Job to deploy the infrastructure using Terraform
   deploy-infrastructure:
