@@ -1,0 +1,51 @@
+name: Build, Test & Deploy App to AKS
+on: [push]
+jobs:
+  # Job to build the container image and push it to GitHub CR
+  build-image-and-push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Container Image
+        run: docker build . -t ghcr.io/${{ github.repository_owner }}/liatrio-app-${{ github.ref_name }}:latest
+      
+      - name: Login to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push image
+        run: docker push ghcr.io/${{ github.repository_owner }}/liatrio-app-${{ github.ref_name }}:latest
+  
+  # Job to deploy the infrastructure using Terraform
+  deploy-infrastructure:
+    needs: build-image-and-push
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: terraform validate
+        run: terraform validate
+
+      - name: terraform init
+        run: terraform init
+
+      - name: terraform plan
+        run: terraform plan -no-color
+
+      - name: terraform apply
+        run: terraform apply -auto-approve -no-color
+
+  # Job to deploy the app to K8S using Helm
+  deploy-app:
+    needs: deploy-infrastructure
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: helm apply
+        run: echo "TODO"
