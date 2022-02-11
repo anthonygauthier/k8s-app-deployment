@@ -19,31 +19,9 @@ jobs:
 
       - name: Push image
         run: docker push ghcr.io/${{ github.repository_owner }}/liatrio-app-${{ github.ref_name }}:latest
-  
-  # Job to deploy the infrastructure using Terraform
-  deploy-infrastructure:
-    needs: build-image-and-push
-    if: github.ref_name == 'main'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: terraform
-    steps:
-      - name: terraform validate
-        run: terraform validate
-
-      - name: terraform init
-        run: terraform init
-
-      - name: terraform plan
-        run: terraform plan -no-color
-
-      - name: terraform apply
-        run: terraform apply -auto-approve -no-color
 
   # Job to deploy the app to K8S using Helm
   deploy-app:
-    needs: deploy-infrastructure
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:
