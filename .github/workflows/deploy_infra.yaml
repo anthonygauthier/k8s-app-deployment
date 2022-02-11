@@ -21,11 +21,11 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      - name: tf validate
-        run: terraform validate
-
       - name: tf init
         run: terraform init
+
+      - name: tf validate
+        run: terraform validate
 
       - name: tf plan
         run: terraform plan -no-color
