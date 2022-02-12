@@ -1,0 +1,11 @@
+apiVersion: v2
+name: k8s-app
+description: A Helm Chart to deploy an app to k8s
+
+type: application
+
+# Chart version
+version: 1.0.0
+
+# App version
+appVersion: "1.0.0"

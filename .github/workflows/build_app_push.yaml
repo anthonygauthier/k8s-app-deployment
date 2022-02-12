@@ -1,4 +1,4 @@
-name: Build, Test & Deploy App to AKS
+name: Build, Test, and Push the container image
 on: [push]
 jobs:
   # Job to build the container image and push it to GitHub CR
@@ -19,12 +19,3 @@ jobs:
 
       - name: Push image
         run: docker push ghcr.io/${{ github.repository_owner }}/liatrio-app-${{ github.ref_name }}:latest
-
-  # Job to deploy the app to K8S using Helm
-  deploy-app:
-    needs: build-image-and-push
-    if: github.ref_name == 'main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: helm apply
-        run: echo "TODO"
