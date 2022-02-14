@@ -56,3 +56,26 @@ jobs:
             --set image.branchName={{ github.ref_name }}
             k8s-app \
             ./helm
+
+  destroy-infrastructure:
+    needs: deploy-app
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: tf init
+        run: terraform init
+
+      - name: tf validate
+        run: terraform validate
+
+      - name: tf destroy
+        if: github.ref_name == 'main'
+        run: terraform destroy -auto-approve -no-color
