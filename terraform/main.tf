@@ -15,6 +15,14 @@ provider "aws" {
   region = "ca-central-1"
 }
 
+# --------------------------------
+#           CloudWatch
+# --------------------------------
+resource "aws_cloudwatch_log_group" "k8s_log" {
+  name              = "/aws/eks/k8s-cluster/cluster"
+  retention_in_days = 1
+}
+
 # ---------------------------------
 #              IAM
 # ---------------------------------
@@ -75,12 +83,14 @@ resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
 resource "aws_eks_cluster" "k8s" {
   name = "k8s-cluster"
   role_arn = aws_iam_role.eks_role.arn
+  enabled_cluster_log_types = ["api", "audit"]
 
   vpc_config {
     subnet_ids = data.aws_subnets.all.ids
   }
 
   depends_on = [
+    aws_cloudwatch_log_group.k8s_log,
     aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
     aws_iam_role_policy_attachment.AmazonEKSVPCResourceController
   ]

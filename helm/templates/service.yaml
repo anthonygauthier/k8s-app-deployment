@@ -4,7 +4,7 @@ metadata:
   name: k8s-app-service
   namespace: demo
   annotations:
-    service.beta.kubernetes.io/aws-load-balancer-internal
+    service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
 spec:
   selector:
     app: k8s-app

@@ -6,24 +6,25 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: k8s-app
+  name: k8s-app-deployment
   namespace: demo
 spec:
+  selector:
+    matchLabels:
+      app: k8s
   replicas: 1
   template:
     metadata:
       labels:
-        app: k8s-app
+        app: k8s
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}-{{ .Values.image.branchName }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          readinessProbe:
-            httpGet:
-              path: /automation
-              port: http
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}-{{ .Values.image.branchName }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        readinessProbe:
+          httpGet:
+            path: /automation
+            port: http
+        ports:
+        - containerPort: 80

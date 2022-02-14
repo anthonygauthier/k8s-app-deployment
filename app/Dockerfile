@@ -9,5 +9,5 @@ RUN npm install
 # run app tests - image build workflow will fail if this fails
 RUN npm run test 
 
-EXPOSE 8080
+EXPOSE 80
 CMD [ "npm", "start" ]
