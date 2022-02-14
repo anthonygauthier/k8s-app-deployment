@@ -46,6 +46,9 @@ jobs:
       run:
         working-directory: helm
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
       - name: Generate kubeconfig
         run: aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $K8S_CLUSTER_NAME
       
