@@ -42,15 +42,15 @@ jobs:
   deploy-app:
     needs: deploy-infrastructure
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: helm
     steps:
-      - name: Install helm
-        run: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
       - name: Generate kubeconfig
         run: aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $K8S_CLUSTER_NAME
       
       - name: Deploy app 
-        run: helm install -f helm/values.yaml --set image.branchName=${{ github.ref_name }} k8s-app ./helm
+        run: helm install -f values.yaml --set image.branchName=${{ github.ref_name }} k8s-app .
 
   destroy-infrastructure:
     needs: deploy-app
