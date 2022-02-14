@@ -4,6 +4,14 @@ on:
     paths:
       - terraform/*
       - .github/workflows/deploy_infra.yaml
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+  TF_VAR_vpc_id: ${{ secrets.AWS_VPC_ID }}
+  K8S_CLUSTER_NAME: k8s-cluster
+
 jobs:
   # Job to deploy the infrastructure using Terraform
   deploy-infrastructure:
@@ -11,11 +19,6 @@ jobs:
     defaults:
       run:
         working-directory: terraform
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-      TF_VAR_vpc_id: ${{ secrets.AWS_VPC_ID }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -40,12 +43,12 @@ jobs:
     needs: deploy-infrastructure
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Install helm
         run: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
+      - name: Generate kubeconfig
+        run: aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $K8S_CLUSTER_NAME
+      
       - name: Deploy app 
         run: |
           helm install \
