@@ -9,11 +9,11 @@ app.get('/automation', (req, res) => {
     })
 });
 
-app.listen(3000, (err) => {
+app.listen(80, (err) => {
     if(err) {
         console.error(err);
     } else {
-        console.log('App running on port 3000');
+        console.log('App running on port 80');
     }
 });
 
