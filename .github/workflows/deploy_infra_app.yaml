@@ -48,15 +48,24 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        
+
       - name: Generate kubeconfig
         run: aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $K8S_CLUSTER_NAME
       
       - name: Deploy app 
         run: helm install -f values.yaml --set image.branchName=${{ github.ref_name }} k8s-app .
 
+      - name: Set API_URL
+        run: echo "API_URL=${kubectl -n demo get svc k8s-app-service -o jsonpath='{.status.loadBalancer.ingress[*].hostname}}" >> $GITHUB_ENV
+
+      - name: Run k6 tests (perf/automated)
+        uses: k6io/action@v0.1
+        with:
+          filename: ../tests/script.js
+
   destroy-infrastructure:
     needs: deploy-app
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     defaults:
       run:

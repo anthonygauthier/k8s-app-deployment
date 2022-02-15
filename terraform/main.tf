@@ -1,7 +1,12 @@
 # DISCLAIMER: 
-# Because I don't remember what resources/iam roles to attribute off the top
-# of my head, I have used the sample (modified) provided by HashiCorp
-# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_cluster
+# To alleviate the time taken to complete the exercise, a modified version of 
+# HashiCorp's eks example modules has been used.
+#
+# https://github.com/hashicorp/learn-terraform-provision-eks-cluster/blob/main/vpc.tf
+# https://github.com/hashicorp/learn-terraform-provision-eks-cluster/blob/main/security-groups.tf
+# https://github.com/hashicorp/learn-terraform-provision-eks-cluster/blob/main/eks-cluster.tf
+# https://github.com/hashicorp/learn-terraform-provision-eks-cluster/blob/main/kubernetes.tf
+# https://github.com/terraform-aws-modules/terraform-aws-eks/blob/v17.24.0/examples/complete/main.tf
 
 # ---------------------------------
 #          BOILERPLATE
@@ -10,112 +15,115 @@ terraform {
   required_version = ">=0.12"
 }
 
-# leave provider empty to use environment variables
 provider "aws" {
   region = "ca-central-1"
 }
 
-# --------------------------------
-#           CloudWatch
-# --------------------------------
-resource "aws_cloudwatch_log_group" "k8s_log" {
-  name              = "/aws/eks/k8s-cluster/cluster"
-  retention_in_days = 1
+locals {
+  cluster_name = "eks-cluster"
 }
 
 # ---------------------------------
-#              IAM
+#             VPC
 # ---------------------------------
-resource "aws_iam_role" "eks_role" {
-  name = "eks-cluster"
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "3.12.0"
 
-  assume_role_policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-      {
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "eks.amazonaws.com"
-        },
-        "Action": "sts:AssumeRole"
-      },
-      {
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "ec2.amazonaws.com"
-        },
-        "Action": "sts:AssumeRole"
-      }
-  ]
-}
-POLICY
-}
+  name                 = "eks-vpc"
+  cidr                 = "10.0.0.0/16"
+  azs                  = ["cac1-az1", "cac1-az2", "cac1-az4"]
+  private_subnets      = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets       = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
+  enable_dns_hostnames = true
 
-resource "aws_iam_role_policy_attachment" "AmazonEKSClusterPolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKSVPCResourceController" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
-  role       = aws_iam_role.eks_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.eks_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.eks_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.eks_role.name
-}
-
-# ---------------------------------
-#              EKS
-# ---------------------------------
-resource "aws_eks_cluster" "k8s" {
-  name = "k8s-cluster"
-  role_arn = aws_iam_role.eks_role.arn
-  enabled_cluster_log_types = ["api", "audit"]
-
-  vpc_config {
-    subnet_ids = data.aws_subnets.all.ids
+  tags = {
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
   }
 
-  depends_on = [
-    aws_cloudwatch_log_group.k8s_log,
-    aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
-    aws_iam_role_policy_attachment.AmazonEKSVPCResourceController
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                      = "1"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"             = "1"
+  }
+}
+
+# ---------------------------------
+#        SECURITY GROUPS
+# ---------------------------------
+resource "aws_security_group" "worker_group_1" {
+  name_prefix = "worker_group_1"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+
+    cidr_blocks = [
+      "10.0.0.0/8",
+    ]
+  }
+
+  ingress {
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+
+    cidr_blocks = [
+      "0.0.0.0/0",
+    ]
+  }
+}
+
+# ---------------------------------
+#             EKS
+# ---------------------------------
+module "eks" {
+  source          = "terraform-aws-modules/eks/aws"
+  version         = "17.24.0"
+
+  cluster_name                    = local.cluster_name
+  cluster_version                 = "1.20"
+  cluster_endpoint_private_access = true
+  cluster_endpoint_public_access  = true
+
+  vpc_id      = module.vpc.vpc_id
+  subnets     = [module.vpc.private_subnets[0], module.vpc.public_subnets[1]]
+
+  workers_group_defaults = {
+    root_volume_type = "gp2"
+  }
+
+  worker_groups = [
+    {
+      name                          = "worker_group_1"
+      instance_type                 = "t3.small"
+      additional_security_group_ids = [aws_security_group.worker_group_1.id]
+      asg_desired_capacity          = 2
+    }
   ]
 }
 
-resource "aws_eks_node_group" "node_group" {
-  cluster_name    = aws_eks_cluster.k8s.name
-  node_group_name = "node_group"
-  node_role_arn   = aws_iam_role.eks_role.arn
-  subnet_ids      = data.aws_subnets.all.ids
-  instance_types = ["t3.micro"]
+data "aws_eks_cluster" "cluster" {
+  name = module.eks.cluster_id
+}
 
-  scaling_config {
-    desired_size = 1
-    max_size     = 1
-    min_size     = 1
-  }
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks.cluster_id
+}
 
-  update_config {
-    max_unavailable = 1
-  }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
-  ]
+# ------------------------------
+#             K8S
+# ------------------------------
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  token                  = data.aws_eks_cluster_auth.cluster.token
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
 }

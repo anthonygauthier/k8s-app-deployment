@@ -3,12 +3,11 @@ kind: Service
 metadata:
   name: k8s-app-service
   namespace: demo
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
 spec:
   selector:
-    app: k8s-app
+    app: k8s-app-deployment
   ports:
-    - port: 80
-      protocol: TCP
+    - protocol: TCP
+      port: 80
+      targetPort: 80
   type: LoadBalancer

@@ -11,12 +11,12 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: k8s
+      app: k8s-app-deployment
   replicas: 1
   template:
     metadata:
       labels:
-        app: k8s
+        app: k8s-app-deployment
     spec:
       containers:
       - name: {{ .Chart.Name }}
@@ -25,6 +25,8 @@ spec:
         readinessProbe:
           httpGet:
             path: /automation
-            port: http
+            port: 80
+            scheme: HTTP
         ports:
-        - containerPort: 80
+            - name: tcp
+              containerPort: 80
