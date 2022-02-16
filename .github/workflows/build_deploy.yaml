@@ -30,6 +30,7 @@ jobs:
 
   # Job to deploy the infrastructure using Terraform
   deploy-infrastructure:
+    needs: build-image-and-push
     runs-on: ubuntu-latest
     defaults:
       run:
