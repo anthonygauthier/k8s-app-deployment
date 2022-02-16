@@ -83,7 +83,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        
+
       - name: Run k6 tests (perf/automated)
         uses: k6io/action@v0.1
         with:
@@ -91,7 +91,7 @@ jobs:
 
   # Job to destroy the infrastructure
   destroy-infrastructure:
-    needs: deploy-app
+    needs: performance-tests
     if: ${{ always() }}
     runs-on: ubuntu-latest
     defaults:
