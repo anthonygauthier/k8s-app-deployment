@@ -74,10 +74,20 @@ jobs:
       - name: Set API_URL
         run: echo "API_URL=$(kubectl -n demo get svc k8s-app-service -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')" >> $GITHUB_ENV
 
+  performance-tests: 
+    needs: deploy-app
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tests/performance
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
       - name: Run k6 tests (perf/automated)
         uses: k6io/action@v0.1
         with:
-          filename: ../tests/performance/script.js
+          filename: script.js
 
   # Job to destroy the infrastructure
   destroy-infrastructure:
