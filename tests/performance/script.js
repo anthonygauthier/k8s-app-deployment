@@ -7,7 +7,7 @@ export const options = {
 };
 
 function testCase() {
-    let res = http.get(`https://${process.env.API_URL}/automation`);
+    let res = http.get(`https://${__ENV.API_URL}/automation`);
 
     if(res.error_code) {
         sleep(5)
