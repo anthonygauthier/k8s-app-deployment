@@ -110,8 +110,9 @@ jobs:
         run: aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $K8S_CLUSTER_NAME
       
       # Necessary to destroy load balancers
-      - name: Destroy app 
-        run: helm del k8s-app
+      - name: Delete app 
+        run: echo "App 'deleted' ;) !"
+        # run: helm del k8s-app
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
@@ -124,5 +125,5 @@ jobs:
 
       - name: tf destroy
         if: github.ref_name == 'main'
-        run: echo "This usually does something :D !"
+        run: echo "Infra 'destroyed' ;) !"
         # run: terraform destroy -auto-approve -no-color
