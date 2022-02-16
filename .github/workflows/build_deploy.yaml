@@ -86,9 +86,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Wait on load-balancer
-        run: npx wait-on http://$API_URL/automation
-
       - name: Run k6 tests (perf/automated)
         uses: grafana/k6-action@v0.2.0
         with:
