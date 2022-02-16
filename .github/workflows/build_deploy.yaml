@@ -73,6 +73,7 @@ jobs:
         run: helm install -f values.yaml --set image.branchName=${{ github.ref_name }} k8s-app .
 
       - name: SetApiURL
+        id: SetApiURL
         run: echo "::set-output name=apiUrl::$(kubectl -n demo get svc k8s-app-service -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')"
     outputs:
       apiUrl: ${{ steps.SetApiURL.outputs.apiUrl }}
