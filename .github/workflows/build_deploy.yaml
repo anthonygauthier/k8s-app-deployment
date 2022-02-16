@@ -77,9 +77,6 @@ jobs:
   performance-tests: 
     needs: deploy-app
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: tests/performance
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -87,7 +84,7 @@ jobs:
       - name: Run k6 tests (perf/automated)
         uses: grafana/k6-action@v0.2.0
         with:
-          filename: script.js
+          filename: tests/performance/script.js
 
   # Job to destroy the infrastructure
   destroy-infrastructure:
