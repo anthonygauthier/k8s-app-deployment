@@ -6,18 +6,11 @@ export const options = {
     vus: 1,
 };
 
-function testCase() {
-    let res = http.get(`https://${__ENV.API_URL}/automation`);
-
-    if(res.error_code) {
-        sleep(5)
-        testCase();
-    }
+export default function() {
+    const res = http.get(`http://${__ENV.API_URL}/automation`);
     
     check(res, {
         'status code 200':                  (r) => r.status === 200,
         'body contains correct message':    (r) => r.body.includes("Automate all the things!"),
     });
 }
-
-export default testCase()
