@@ -70,7 +70,7 @@ jobs:
         run: aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $K8S_CLUSTER_NAME
       
       - name: Deploy app 
-        run: helm install -f values.yaml --set image.branchName=${{ github.ref_name }} k8s-app .
+        run: helm upgrade --install -f values.yaml --set image.branchName=${{ github.ref_name }} k8s-app .
 
       - name: SetApiURL
         id: SetApiURL
