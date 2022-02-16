@@ -1,18 +1,33 @@
-name: Deploy AWS Cloud Infrastructure
-on: 
-  push:
-    paths:
-      - terraform/*
-      - .github/workflows/deploy_infra_app.yaml
+name: Build & Deploy Infra/App
+on: [ push ]
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
   TF_VAR_vpc_id: ${{ secrets.AWS_VPC_ID }}
-  K8S_CLUSTER_NAME: k8s-cluster
+  K8S_CLUSTER_NAME: eks-cluster
 
 jobs:
+  # Job to build, test and push the container image to GHCR
+  build-image-and-push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Container Image
+        run: docker build . -t ghcr.io/${{ github.repository_owner }}/liatrio-app-${{ github.ref_name }}:latest
+      
+      - name: Login to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push image
+        run: docker push ghcr.io/${{ github.repository_owner }}/liatrio-app-${{ github.ref_name }}:latest
+
   # Job to deploy the infrastructure using Terraform
   deploy-infrastructure:
     runs-on: ubuntu-latest
@@ -39,6 +54,7 @@ jobs:
         if: github.ref_name == 'main'
         run: terraform apply -auto-approve -no-color
 
+  # Job to deploy app to k8s
   deploy-app:
     needs: deploy-infrastructure
     runs-on: ubuntu-latest
@@ -63,6 +79,7 @@ jobs:
         with:
           filename: ../tests/script.js
 
+  # Job to destroy the infrastructure
   destroy-infrastructure:
     needs: deploy-app
     if: ${{ always() }}
