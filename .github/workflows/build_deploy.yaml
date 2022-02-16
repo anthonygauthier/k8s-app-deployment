@@ -71,12 +71,17 @@ jobs:
       - name: Deploy app 
         run: helm install -f values.yaml --set image.branchName=${{ github.ref_name }} k8s-app .
 
-      - name: Set API_URL
-        run: echo "API_URL=$(kubectl -n demo get svc k8s-app-service -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')" >> $GITHUB_ENV
+      - name: SetApiURL
+        run: echo "::set-output name=apiUrl::$(kubectl -n demo get svc k8s-app-service -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+    outputs:
+      apiUrl: ${{ steps.SetApiURL.outputs.apiUrl }}
 
+  # Job that execuste performance/automated tests
   performance-tests: 
     needs: deploy-app
     runs-on: ubuntu-latest
+    env:
+      API_URL: ${{ needs.deploy-app.outputs.apiUrl }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -119,4 +124,5 @@ jobs:
 
       - name: tf destroy
         if: github.ref_name == 'main'
-        run: terraform destroy -auto-approve -no-color
+        run: echo "This usually does something :D !"
+        # run: terraform destroy -auto-approve -no-color
